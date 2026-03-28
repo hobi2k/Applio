@@ -1,0 +1,120 @@
+{
+  "last_node_id": 5,
+  "last_link_id": 4,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "ApplioTTS",
+      "pos": [50, 280],
+      "size": [360, 130],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {"name": "text",      "type": "STRING", "widget": {"name": "text"},      "link": null},
+        {"name": "tts_voice", "type": "STRING", "widget": {"name": "tts_voice"}, "link": null},
+        {"name": "speed",     "type": "INT",    "widget": {"name": "speed"},     "link": null}
+      ],
+      "outputs": [
+        {"name": "audio", "type": "AUDIO", "links": [1], "slot_index": 0}
+      ],
+      "properties": {"Node name for S&R": "ApplioTTS"},
+      "widgets_values": ["Hello, this is a voice conversion test using Applio.", "en-US-AriaNeural", 0]
+    },
+    {
+      "id": 2,
+      "type": "ApplioModelLoader",
+      "pos": [50, 50],
+      "size": [350, 150],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {"name": "pth_path",             "type": "STRING", "widget": {"name": "pth_path"},             "link": null},
+        {"name": "index_path",           "type": "STRING", "widget": {"name": "index_path"},           "link": null},
+        {"name": "embedder_model",       "type": "COMBO",  "widget": {"name": "embedder_model"},       "link": null},
+        {"name": "embedder_custom_path", "type": "STRING", "widget": {"name": "embedder_custom_path"}, "link": null}
+      ],
+      "outputs": [
+        {"name": "model", "type": "APPLIO_MODEL", "links": [2], "slot_index": 0}
+      ],
+      "properties": {"Node name for S&R": "ApplioModelLoader"},
+      "widgets_values": ["speaker.pth", "speaker.index", "contentvec", ""]
+    },
+    {
+      "id": 3,
+      "type": "ApplioInfer",
+      "pos": [500, 80],
+      "size": [360, 530],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {"name": "model",                "type": "APPLIO_MODEL", "link": 2},
+        {"name": "audio",                "type": "AUDIO",        "link": 1},
+        {"name": "pitch",                "type": "INT",     "widget": {"name": "pitch"},                "link": null},
+        {"name": "f0_method",            "type": "COMBO",   "widget": {"name": "f0_method"},            "link": null},
+        {"name": "index_rate",           "type": "FLOAT",   "widget": {"name": "index_rate"},           "link": null},
+        {"name": "volume_envelope",      "type": "FLOAT",   "widget": {"name": "volume_envelope"},      "link": null},
+        {"name": "protect",              "type": "FLOAT",   "widget": {"name": "protect"},              "link": null},
+        {"name": "hop_length",           "type": "INT",     "widget": {"name": "hop_length"},           "link": null},
+        {"name": "split_audio",          "type": "BOOLEAN", "widget": {"name": "split_audio"},          "link": null},
+        {"name": "clean_audio",          "type": "BOOLEAN", "widget": {"name": "clean_audio"},          "link": null},
+        {"name": "clean_strength",       "type": "FLOAT",   "widget": {"name": "clean_strength"},       "link": null},
+        {"name": "f0_autotune",          "type": "BOOLEAN", "widget": {"name": "f0_autotune"},          "link": null},
+        {"name": "f0_autotune_strength", "type": "FLOAT",   "widget": {"name": "f0_autotune_strength"}, "link": null},
+        {"name": "formant_shifting",     "type": "BOOLEAN", "widget": {"name": "formant_shifting"},     "link": null},
+        {"name": "formant_qfrency",      "type": "FLOAT",   "widget": {"name": "formant_qfrency"},      "link": null},
+        {"name": "formant_timbre",       "type": "FLOAT",   "widget": {"name": "formant_timbre"},       "link": null},
+        {"name": "sid",                  "type": "INT",     "widget": {"name": "sid"},                  "link": null}
+      ],
+      "outputs": [
+        {"name": "audio", "type": "AUDIO", "links": [3, 4], "slot_index": 0}
+      ],
+      "properties": {"Node name for S&R": "ApplioInfer"},
+      "widgets_values": [0, "rmvpe", 0.75, 1.0, 0.5, 128, false, false, 0.5, false, 1.0, false, 0.8, 0.8, 0]
+    },
+    {
+      "id": 4,
+      "type": "PreviewAudio",
+      "pos": [960, 80],
+      "size": [315, 88],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {"name": "audio", "type": "AUDIO", "link": 3}
+      ],
+      "outputs": [],
+      "properties": {"Node name for S&R": "PreviewAudio"},
+      "widgets_values": []
+    },
+    {
+      "id": 5,
+      "type": "SaveAudio",
+      "pos": [960, 230],
+      "size": [315, 110],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {"name": "audio",           "type": "AUDIO",  "link": 4},
+        {"name": "filename_prefix", "type": "STRING", "widget": {"name": "filename_prefix"}, "link": null},
+        {"name": "format",          "type": "COMBO",  "widget": {"name": "format"},          "link": null}
+      ],
+      "outputs": [],
+      "properties": {"Node name for S&R": "SaveAudio"},
+      "widgets_values": ["applio_tts_output", "flac"]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 3, 1, "AUDIO"],
+    [2, 2, 0, 3, 0, "APPLIO_MODEL"],
+    [3, 3, 0, 4, 0, "AUDIO"],
+    [4, 3, 0, 5, 0, "AUDIO"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {"ds": {"scale": 0.8, "offset": [0, 0]}},
+  "version": 0.4
+}

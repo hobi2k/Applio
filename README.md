@@ -155,17 +155,35 @@ Spectrogram + waveform + spectral features.
 
 ---
 
-## Typical Workflow
+## Example Workflows
 
+Ready-to-use workflow JSON files are in the [`workflows/`](workflows/) folder. Load them via **ComfyUI → Load**.
+
+| File | Description |
+|------|-------------|
+| [`01_basic_voice_convert.json`](workflows/01_basic_voice_convert.json) | Load audio → voice convert → preview + save |
+| [`02_tts_voice_convert.json`](workflows/02_tts_voice_convert.json) | EdgeTTS → voice convert → preview + save |
+| [`03_voice_convert_effects_chain.json`](workflows/03_voice_convert_effects_chain.json) | Voice convert → Compressor → Reverb → Limiter → save |
+
+**Workflow 01 — Basic voice convert**
 ```
-Load Audio → Applio Model Loader ─┐
-                                   ├→ Applio Voice Convert → Applio Reverb → Applio Limiter → Save Audio
-            [pth + index files] ──┘
+LoadAudio ──────────────────────────┐
+                                    ├→ ApplioInfer → PreviewAudio
+ApplioModelLoader (pth + index) ────┘             → SaveAudio
 ```
 
-TTS pipeline:
+**Workflow 02 — TTS → voice convert**
 ```
-Applio TTS → Applio Voice Convert → Save Audio
+ApplioTTS (text → speech) ──────────┐
+                                    ├→ ApplioInfer → PreviewAudio
+ApplioModelLoader ──────────────────┘             → SaveAudio
+```
+
+**Workflow 03 — Effects chain**
+```
+LoadAudio ──┐
+            ├→ ApplioInfer → ApplioCompressor → ApplioReverb → ApplioLimiter → PreviewAudio
+ModelLoader ┘                                                                → SaveAudio
 ```
 
 ---
