@@ -26,9 +26,23 @@ import asyncio
 import tempfile
 import traceback
 
+# ── ComfyUI 모델 경로 설정 (rvc 임포트 전에 반드시 먼저 설정) ──────────────
+import folder_paths as _fp
+
+_COMFYUI_RVC_DIR = os.path.join(_fp.models_dir, "rvc")
+os.environ["APPLIO_RVC_DIR"] = _COMFYUI_RVC_DIR
+
+# ComfyUI 모델 브라우저에 RVC 폴더 등록
+_RVC_VOICES_DIR = os.path.join(_COMFYUI_RVC_DIR, "voices")
+_RVC_INDEX_DIR  = os.path.join(_COMFYUI_RVC_DIR, "index")
+_fp.add_model_folder_path("rvc_voices", _RVC_VOICES_DIR)
+_fp.add_model_folder_path("rvc_index",  _RVC_INDEX_DIR)
+# ──────────────────────────────────────────────────────────────────────────────
+
 import torch
 import numpy as np
 import soundfile as sf
+import requests
 
 from rvc.infer.infer import VoiceConverter
 from rvc.lib.tools.analyzer import analyze_audio
@@ -40,6 +54,56 @@ from pedalboard import (
 import edge_tts
 
 # ─────────────────────────────────────────────────────────────
+# 필수 모델 자동 다운로드
+# ─────────────────────────────────────────────────────────────
+
+_HF_BASE = "https://huggingface.co/IAHispano/Applio/resolve/main/Resources"
+
+_REQUIRED_MODELS = [
+    ("predictors/rmvpe.pt",
+     os.path.join(_COMFYUI_RVC_DIR, "predictors", "rmvpe.pt")),
+    ("predictors/fcpe.pt",
+     os.path.join(_COMFYUI_RVC_DIR, "predictors", "fcpe.pt")),
+    ("embedders/contentvec/pytorch_model.bin",
+     os.path.join(_COMFYUI_RVC_DIR, "embedders", "contentvec", "pytorch_model.bin")),
+    ("embedders/contentvec/config.json",
+     os.path.join(_COMFYUI_RVC_DIR, "embedders", "contentvec", "config.json")),
+]
+
+
+def _ensure_models():
+    """추론에 필요한 모델 파일이 없으면 HuggingFace에서 다운로드합니다."""
+    missing = [(remote, local) for remote, local in _REQUIRED_MODELS
+               if not os.path.exists(local)]
+    if not missing:
+        return
+
+    print(f"[Applio] {len(missing)}개 모델 파일을 ComfyUI models/rvc/ 에 다운로드합니다.")
+    for remote_path, local_path in missing:
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        url = f"{_HF_BASE}/{remote_path}"
+        print(f"[Applio] 다운로드 중: {remote_path}")
+        try:
+            r = requests.get(url, stream=True, timeout=60)
+            r.raise_for_status()
+            total = int(r.headers.get("content-length", 0))
+            downloaded = 0
+            with open(local_path, "wb") as f:
+                for chunk in r.iter_content(chunk_size=1024 * 1024):
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if total:
+                        pct = downloaded / total * 100
+                        print(f"\r[Applio]   {os.path.basename(local_path)}: {pct:.1f}%", end="")
+            print()
+        except Exception as e:
+            print(f"[Applio] 다운로드 실패 ({remote_path}): {e}")
+            if os.path.exists(local_path):
+                os.remove(local_path)
+            raise
+
+
+# ─────────────────────────────────────────────────────────────
 # 공통 유틸
 # ─────────────────────────────────────────────────────────────
 
@@ -49,6 +113,7 @@ _VC: VoiceConverter | None = None
 def _get_vc() -> VoiceConverter:
     global _VC
     if _VC is None:
+        _ensure_models()
         _VC = VoiceConverter()
     return _VC
 
@@ -99,7 +164,11 @@ def _run_async(coro):
 # ─────────────────────────────────────────────────────────────
 
 class ApplioModelLoader:
-    """학습된 화자 모델(.pth)과 인덱스 파일(.index)을 로드합니다."""
+    """학습된 화자 모델(.pth)과 인덱스 파일(.index)을 로드합니다.
+
+    모델 파일은 ComfyUI models/rvc/voices/ 에,
+    인덱스 파일은 ComfyUI models/rvc/index/ 에 배치하세요.
+    """
 
     CATEGORY = "Audio/Applio"
     RETURN_TYPES  = ("APPLIO_MODEL",)
@@ -108,14 +177,16 @@ class ApplioModelLoader:
 
     @classmethod
     def INPUT_TYPES(cls):
+        voices = _fp.get_filename_list("rvc_voices") or []
+        indexes = _fp.get_filename_list("rvc_index") or []
         return {"required": {
             "pth_path": ("STRING", {
-                "default": "",
-                "tooltip": "학습된 화자 .pth 체크포인트 경로"
+                "default": voices[0] if voices else "",
+                "tooltip": "models/rvc/voices/ 의 .pth 파일명 또는 절대경로"
             }),
             "index_path": ("STRING", {
-                "default": "",
-                "tooltip": ".index 파일 경로 (없으면 빈 문자열)"
+                "default": indexes[0] if indexes else "",
+                "tooltip": "models/rvc/index/ 의 .index 파일명 또는 절대경로 (없으면 빈 문자열)"
             }),
             "embedder_model": ([
                 "contentvec", "spin", "spin-v2",
@@ -129,6 +200,17 @@ class ApplioModelLoader:
         }}
 
     def load(self, pth_path, index_path, embedder_model, embedder_custom_path):
+        # 파일명만 입력된 경우 voices/index 폴더에서 절대경로로 변환
+        def resolve(name, folder):
+            if name and not os.path.isabs(name) and not os.path.exists(name):
+                candidate = os.path.join(folder, name)
+                if os.path.exists(candidate):
+                    return candidate
+            return name
+
+        pth_path   = resolve(pth_path,   _RVC_VOICES_DIR)
+        index_path = resolve(index_path, _RVC_INDEX_DIR)
+
         return ({"pth_path": pth_path,
                  "index_path": index_path,
                  "embedder_model": embedder_model,
@@ -154,7 +236,7 @@ class ApplioInfer:
             "audio":   ("AUDIO",),
             "pitch":   ("INT",   {"default": 0,    "min": -24,  "max": 24,
                                    "tooltip": "반음 단위 피치 이동"}),
-            "f0_method": (["rmvpe", "crepe"], {"default": "rmvpe"}),
+            "f0_method": (["rmvpe", "crepe", "fcpe"], {"default": "rmvpe"}),
             "index_rate": ("FLOAT", {"default": 0.75, "min": 0.0, "max": 1.0, "step": 0.05,
                                       "tooltip": "FAISS 인덱스 블렌드 (0=무시, 1=완전 적용)"}),
             "volume_envelope": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.1}),

@@ -12,6 +12,16 @@ import os
 from rvc.lib.predictors.RMVPE import RMVPE0Predictor
 from rvc.configs.config import Config
 
+# APPLIO_RVC_DIR: nodes.py에서 ComfyUI models/rvc/ 로 설정됨
+_rvc_dir = os.environ.get(
+    "APPLIO_RVC_DIR",
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
+        "rvc", "models",
+    ),
+)
+_predictors_dir = os.path.join(_rvc_dir, "predictors")
+
 config = Config()
 
 
@@ -77,7 +87,7 @@ class F0Extractor:
             f0 = f0.squeeze().cpu().numpy()
         elif method == "rmvpe":
             model_rmvpe = RMVPE0Predictor(
-                os.path.join("rvc", "models", "predictors", "rmvpe.pt"),
+                os.path.join(_predictors_dir, "rmvpe.pt"),
                 device=config.device,
                 # hop_length=80
             )

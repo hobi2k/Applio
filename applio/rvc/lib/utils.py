@@ -104,7 +104,10 @@ def format_title(title):
 
 
 def load_embedding(embedder_model, custom_embedder=None):
-    embedder_root = os.path.join(now_dir, "rvc", "models", "embedders")
+    embedder_root = os.path.join(
+        os.environ.get("APPLIO_RVC_DIR", os.path.join(now_dir, "rvc", "models")),
+        "embedders",
+    )
     embedding_list = {
         "contentvec": os.path.join(embedder_root, "contentvec"),
         "spin": os.path.join(embedder_root, "spin"),

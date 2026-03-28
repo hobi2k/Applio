@@ -6,6 +6,17 @@ from torchfcpe import spawn_infer_model_from_pt
 import torchcrepe
 import numpy as np
 
+# APPLIO_RVC_DIR: nodes.py에서 ComfyUI models/rvc/ 로 설정됨
+# 미설정 시 __file__ 기준 Applio 내부 경로로 폴백
+_rvc_dir = os.environ.get(
+    "APPLIO_RVC_DIR",
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
+        "rvc", "models",
+    ),
+)
+_predictors_dir = os.path.join(_rvc_dir, "predictors")
+
 
 class RMVPE:
     def __init__(self, device, model_name="rmvpe.pt", sample_rate=16000, hop_size=160):
@@ -13,7 +24,7 @@ class RMVPE:
         self.sample_rate = sample_rate
         self.hop_size = hop_size
         self.model = RMVPE0Predictor(
-            os.path.join("rvc", "models", "predictors", model_name),
+            os.path.join(_predictors_dir, model_name),
             device=self.device,
         )
 
@@ -62,7 +73,7 @@ class FCPE:
         self.sample_rate = sample_rate
         self.hop_size = hop_size
         self.model = spawn_infer_model_from_pt(
-            os.path.join("rvc", "models", "predictors", "fcpe.pt"),
+            os.path.join(_predictors_dir, "fcpe.pt"),
             self.device,
             bundled_model=True,
         )
