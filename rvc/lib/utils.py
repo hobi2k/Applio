@@ -21,7 +21,7 @@ logging.getLogger("faiss.loader").setLevel(logging.ERROR)
 logging.getLogger("transformers").setLevel(logging.ERROR)
 logging.getLogger("torch").setLevel(logging.ERROR)
 
-now_dir = os.getcwd()
+now_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(now_dir)
 
 base_path = os.path.join(now_dir, "rvc", "models", "formant", "stftpitchshift")

@@ -23,7 +23,7 @@ from pedalboard import (
     Delay,
 )
 
-now_dir = os.getcwd()
+now_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(now_dir)
 
 from rvc.infer.pipeline import Pipeline as VC

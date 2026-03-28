@@ -10,7 +10,7 @@ import numpy as np
 from scipy import signal
 from torch import Tensor
 
-now_dir = os.getcwd()
+now_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(now_dir)
 
 from rvc.lib.predictors.f0 import CREPE, FCPE, RMVPE
