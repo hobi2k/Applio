@@ -1,49 +1,37 @@
-# Core dependencies
-setuptools==81.0.0
-pip>=23.3; sys_platform == 'darwin'
-wheel; sys_platform == 'darwin'
-PyYAML; sys_platform == 'darwin'
-numpy==2.3.5
-requests>=2.31.0,<2.32.0
+# ────────────────────────────────────────────────────────────
+# Applio ComfyUI Custom Node — 의존성
+#
+# torch / torchaudio / torchvision 은 ComfyUI 환경이 관리하므로
+# 여기에 명시하지 않습니다. (현재: torch==2.10.0+cu130)
+# ────────────────────────────────────────────────────────────
+
+# Core
+setuptools>=65.0
+numpy>=1.23
+requests>=2.31.0
 tqdm
 wget
 
 # Audio processing
 ffmpeg-python>=0.2.0
-faiss-cpu==1.13.2
-librosa==0.11.0
-scipy==1.16.3
-soundfile==0.12.1
+faiss-cpu>=1.7.3
+librosa>=0.10.0
+scipy>=1.10.0
+soundfile>=0.12.0
 noisereduce
 pedalboard
 stftpitchshift
 soxr
 
-# Machine learning and deep learning
-omegaconf>=2.0.6; sys_platform == 'darwin'
-numba==0.63.1
-torch==2.7.1; sys_platform == 'darwin'
-torch==2.7.1+cu128; sys_platform == 'linux' or sys_platform == 'win32'
-torchaudio==2.7.1; sys_platform == 'darwin'
-torchaudio==2.7.1+cu128; sys_platform == 'linux' or sys_platform == 'win32'
-torchvision==0.22.1; sys_platform == 'darwin'
-torchvision==0.22.1+cu128; sys_platform == 'linux' or sys_platform == 'win32'
+# ML
+numba>=0.57.0
 torchcrepe
 torchfcpe
 einops
-transformers==4.44.2
+transformers>=4.44.0
 
-# Visualization and UI
-matplotlib==3.10.8
-tensorboard
-gradio==6.5.1
+# Visualization (AudioAnalyzer 노드)
+matplotlib>=3.7.0
 
-# Miscellaneous utilities
-certifi>=2023.07.22; sys_platform == 'darwin'
-antlr4-python3-runtime==4.8; sys_platform == 'darwin'
-tensorboardX
-edge-tts==7.2.7
-pypresence
-beautifulsoup4
-sounddevice
-webrtcvad-wheels
+# TTS
+edge-tts>=6.1.0
